@@ -291,10 +291,17 @@ public class RaftConsensusServiceImpl implements RaftConsensusService {
                 raftNode.getSnapshot().getLock().unlock();
             }
 
-            // discard old log entries
+            // discard old log entries and update node state
             raftNode.getLock().lock();
             try {
                 raftNode.getRaftLog().truncatePrefix(lastSnapshotIndex + 1);
+                raftNode.setCommitIndex(lastSnapshotIndex);
+                raftNode.setLastAppliedIndex(lastSnapshotIndex);
+                RaftProto.Configuration snapshotConfiguration
+                        = raftNode.getSnapshot().getMetaData().getConfiguration();
+                if (snapshotConfiguration.getServersCount() > 0) {
+                    raftNode.setConfiguration(snapshotConfiguration);
+                }
             } finally {
                 raftNode.getLock().unlock();
             }
