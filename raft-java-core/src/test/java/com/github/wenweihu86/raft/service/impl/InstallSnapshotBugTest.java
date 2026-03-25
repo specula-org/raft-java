@@ -172,40 +172,35 @@ public class InstallSnapshotBugTest {
         Assert.assertEquals("Snapshot metadata should reflect lastIncludedIndex=100",
                 100, snapshotLastIndex);
 
-        // === BUG DEMONSTRATION ===
-        // After installSnapshot, commitIndex SHOULD be updated to at least
-        // lastIncludedIndex (100), just as the constructor does on startup.
-        // But the buggy code leaves it at the old value.
+        // === FIX VERIFICATION ===
+        // After the fix, commitIndex, lastAppliedIndex, and configuration
+        // should all be updated to match the snapshot, just as the constructor
+        // does on startup (RaftNode.java lines 88-112).
         long postCommitIndex = raftNode.getCommitIndex();
         long postLastApplied = raftNode.getLastAppliedIndex();
         int postConfigSize = raftNode.getConfiguration().getServersCount();
 
-        // These assertions demonstrate the bug: values are STILL at old levels
-        System.out.println("=== Bug #75 Demonstration ===");
+        System.out.println("=== Bug #75 Fix Verification ===");
         System.out.println("Snapshot lastIncludedIndex: 100");
-        System.out.println("commitIndex after install:  " + postCommitIndex + " (expected: 100)");
-        System.out.println("lastAppliedIndex after install: " + postLastApplied + " (expected: 100)");
-        System.out.println("configuration servers after install: " + postConfigSize + " (expected: 4)");
+        System.out.println("commitIndex after install:  " + postCommitIndex);
+        System.out.println("lastAppliedIndex after install: " + postLastApplied);
+        System.out.println("configuration servers after install: " + postConfigSize);
 
-        // BUG: commitIndex is still 5 instead of 100
+        // After fix: commitIndex should be updated to 100
         Assert.assertEquals(
-                "BUG: commitIndex was not updated after installSnapshot "
-                + "(should be 100, still " + postCommitIndex + ")",
-                5, postCommitIndex);
+                "commitIndex should be updated to snapshot lastIncludedIndex",
+                100, postCommitIndex);
 
-        // BUG: lastAppliedIndex is still 5 instead of 100
+        // After fix: lastAppliedIndex should be updated to 100
         Assert.assertEquals(
-                "BUG: lastAppliedIndex was not updated after installSnapshot "
-                + "(should be 100, still " + postLastApplied + ")",
-                5, postLastApplied);
+                "lastAppliedIndex should be updated to snapshot lastIncludedIndex",
+                100, postLastApplied);
 
-        // BUG: configuration still has 3 servers instead of 4
+        // After fix: configuration should have 4 servers from snapshot
         Assert.assertEquals(
-                "BUG: configuration was not updated after installSnapshot "
-                + "(should be 4 servers, still " + postConfigSize + ")",
-                3, postConfigSize);
+                "configuration should be updated from snapshot metadata",
+                4, postConfigSize);
 
-        System.out.println("\nAll assertions passed: bug #75 is confirmed.");
-        System.out.println("commitIndex, lastAppliedIndex, and configuration are NOT updated.");
+        System.out.println("\nAll assertions passed: fix verified.");
     }
 }
